@@ -96,16 +96,24 @@ jobs:
 Runs fallow-py, uploads SARIF to Code Scanning, and fails the job on
 error-severity findings.
 
-### MCP server (AI agents)
+### MCP server (AI agents / Claude Code)
 
 ```bash
 pip install "fallow-py[mcp]"
 fallow-py-mcp           # stdio MCP server
 ```
 
+Register it with Claude Code (user scope = available in every project):
+
+```bash
+claude mcp add fallow-py --scope user -- fallow-py-mcp
+# pre-PyPI / from a local checkout, point at the venv binary:
+# claude mcp add fallow-py --scope user -- /path/to/fallow-py/.venv/bin/fallow-py-mcp
+```
+
 Exposes two tools: `analyze(path, only?, skip?)` (returns the full JSON
-envelope) and `list_analyses()`. Point Claude Code or any MCP client at the
-`fallow-py-mcp` command.
+envelope) and `list_analyses()`. Restart Claude Code after adding so it loads
+the server.
 
 ### LSP server (editors)
 
