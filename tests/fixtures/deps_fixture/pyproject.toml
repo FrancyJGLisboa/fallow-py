@@ -1,0 +1,5 @@
+[project]
+name = "deps-fixture"
+version = "0.0.0"
+# 'pathspec' is declared but never imported by any module below -> deptry DEP002.
+dependencies = ["pathspec"]

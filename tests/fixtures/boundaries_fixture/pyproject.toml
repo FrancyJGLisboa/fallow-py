@@ -1,0 +1,15 @@
+[project]
+name = "boundaries-fixture"
+version = "0.0.0"
+
+[tool.fallow_py.rules]
+boundary-violation = "warn"
+
+[tool.importlinter]
+root_package = "myproj"
+
+[[tool.importlinter.contracts]]
+name = "a must not import b"
+type = "forbidden"
+source_modules = ["myproj.a"]
+forbidden_modules = ["myproj.b"]

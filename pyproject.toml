@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fallow-py"
+version = "0.0.1"
+description = "Unified codebase intelligence for Python: whole-project module reachability, circular dependencies, dependency hygiene, and complexity — one issue model, one config, one CI/LSP/MCP surface."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Francy Lisboa Charuto" }]
+keywords = ["dead-code", "static-analysis", "unused", "circular-dependency", "codebase"]
+dependencies = [
+    "pathspec>=0.12",
+]
+
+[project.optional-dependencies]
+# Tool adapters (Phase 2). Subprocessed when present; not import-time deps.
+adapters = ["deptry>=0.20", "radon>=6", "import-linter>=2"]
+# Integration servers (Phase 3). Imported only when the server is launched.
+mcp = ["mcp>=1.2"]
+lsp = ["pygls>=2,<3", "lsprotocol"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+fallow-py = "fallow_py.cli:main"
+fallow-py-mcp = "fallow_py.mcp.server:main"
+fallow-py-lsp = "fallow_py.lsp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fallow_py"]
+
+# fallow-py analyzes itself. Severity drives CI exit code: error|warn|off.
+[tool.fallow_py]
+# Test fixtures are deliberately broken (orphans, cycles) — they are analysis
+# inputs, not code under analysis.
+ignore = ["tests/fixtures/**"]
+
+[tool.fallow_py.rules]
+unused-module = "error"
+circular-dependency = "error"
+unresolved-import = "warn"
+unused-dependency = "warn"
+complexity-hotspot = "off"
+boundary-violation = "off"
+
+[tool.ruff]
+line-length = 100
+
+# These dev/CLI tools are invoked as commands (or subprocessed by the adapters),
+# never imported — so deptry's "declared but unused" (DEP002) is a false signal.
+[tool.deptry.per_rule_ignores]
+DEP002 = ["deptry", "radon", "import-linter", "pytest", "ruff"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Fixture projects are analysis inputs, not test modules — never collect them.
+norecursedirs = ["tests/fixtures", ".venv"]

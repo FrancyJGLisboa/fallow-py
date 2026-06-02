@@ -1,0 +1,6 @@
+[project]
+name = "complexity-fixture"
+version = "0.0.0"
+
+[tool.fallow_py.rules]
+complexity-hotspot = "warn"

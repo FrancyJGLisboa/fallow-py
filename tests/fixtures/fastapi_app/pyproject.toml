@@ -1,0 +1,7 @@
+[project]
+name = "fastapi-fixture"
+version = "0.0.0"
+dependencies = ["fastapi>=0.110"]
+
+[project.scripts]
+serve = "main:app"
