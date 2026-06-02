@@ -86,7 +86,7 @@ def analyze_project(
     # Tool adapters (Phase 2): only the selected ones run; each reports its own
     # ran/skipped/error status into meta so omissions are never silent.
     selected_adapters = {a for a in ADAPTER_ANALYSES if _selected(a, only, skip)}
-    adapter_issues, adapter_meta = run_adapters(root, config, selected_adapters)
+    adapter_issues, adapter_meta = run_adapters(root, config, selected_adapters, files)
     issues += adapter_issues
 
     issues = suppress.apply(issues, suppressions)

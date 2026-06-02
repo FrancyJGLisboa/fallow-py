@@ -17,7 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Tool adapters (Phase 2). Subprocessed when present; not import-time deps.
-adapters = ["deptry>=0.20", "radon>=6", "import-linter>=2"]
+adapters = ["deptry>=0.20", "radon>=6", "import-linter>=2", "vulture>=2", "ruff>=0.6"]
 # Integration servers (Phase 3). Imported only when the server is launched.
 mcp = ["mcp>=1.2"]
 lsp = ["pygls>=2,<3", "lsprotocol"]
@@ -47,11 +47,13 @@ boundary-violation = "off"
 
 [tool.ruff]
 line-length = 100
+# Fixtures are deliberately-broken analysis inputs, not code to lint.
+extend-exclude = ["tests/fixtures"]
 
 # These dev/CLI tools are invoked as commands (or subprocessed by the adapters),
 # never imported — so deptry's "declared but unused" (DEP002) is a false signal.
 [tool.deptry.per_rule_ignores]
-DEP002 = ["deptry", "radon", "import-linter", "pytest", "ruff"]
+DEP002 = ["deptry", "radon", "import-linter", "vulture", "pytest", "ruff"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

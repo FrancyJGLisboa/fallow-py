@@ -54,7 +54,8 @@ def _has_contracts(root: Path) -> bool:
     return False
 
 
-def run_adapter(root: Path, config: Config) -> AdapterOutcome:
+def run_adapter(root: Path, config: Config, files=None) -> AdapterOutcome:
+    # Contract-based and project-scoped; the discovered file list is not used.
     if not config.is_enabled(BOUNDARY_VIOLATION):
         return AdapterOutcome(NAME, "skipped", reason="boundary-violation is off")
     if not module_available("importlinter"):

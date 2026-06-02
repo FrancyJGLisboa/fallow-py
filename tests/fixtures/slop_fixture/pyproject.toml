@@ -1,0 +1,7 @@
+[project]
+name = "slop-fixture"
+version = "0.0.0"
+
+[tool.fallow_py.rules]
+# Opt into the FP-prone dead-code sweep for this fixture.
+dead-code = "warn"

@@ -11,8 +11,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..config import Config
+from ..discover import SourceFile
 from ..issue import Issue
-from . import deptry, import_linter, radon
+from . import deptry, import_linter, radon, ruff, vulture
 from .base import AdapterOutcome
 
 # Adapter selection name -> module. Names join the native analyses for
@@ -21,6 +22,8 @@ _ADAPTERS = {
     "dependencies": deptry,
     "complexity": radon,
     "boundaries": import_linter,
+    "dead-code": vulture,
+    "unused-imports": ruff,
 }
 
 ADAPTER_ANALYSES = tuple(_ADAPTERS)
@@ -30,15 +33,21 @@ def run_adapters(
     root: Path,
     config: Config,
     selected: set[str],
+    files: list[SourceFile],
 ) -> tuple[list[Issue], list[dict]]:
-    """Run each selected adapter. *selected* is the set of adapter names to run."""
+    """Run each selected adapter against the same file set the native engine used.
+
+    Passing *files* (already filtered by gitignore, venv skips, and the ignore
+    config) is essential: file-scanning tools like vulture would otherwise crawl
+    .venv and site-packages and drown the report in noise.
+    """
     issues: list[Issue] = []
     meta: list[dict] = []
     for name, module in _ADAPTERS.items():
         if name not in selected:
             continue
         try:
-            outcome = module.run_adapter(root, config)
+            outcome = module.run_adapter(root, config, files)
         except Exception as exc:  # an adapter crash must not abort the whole run
             outcome = AdapterOutcome(module.NAME, "error", reason=f"{type(exc).__name__}: {exc}")
         issues.extend(outcome.issues)

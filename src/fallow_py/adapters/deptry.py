@@ -28,7 +28,9 @@ _CODE_TO_KIND = {
 }
 
 
-def run_adapter(root: Path, config: Config) -> AdapterOutcome:
+def run_adapter(root: Path, config: Config, files=None) -> AdapterOutcome:
+    # deptry is project-scoped (declared deps vs imports) and applies its own
+    # gitignore/venv excludes, so it does not need the discovered file list.
     relevant_kinds = {UNUSED_DEPENDENCY, UNLISTED_DEPENDENCY}
     if not any(config.is_enabled(k) for k in relevant_kinds):
         return AdapterOutcome(NAME, "skipped", reason="all dependency kinds are off")

@@ -17,11 +17,13 @@ unresolved internal imports. Framework-aware (Django, FastAPI, Flask, Celery,
 pytest) so framework-dispatched code is not falsely flagged.
 
 **Phase 2 — tool adapters:** dependency hygiene (`deptry`), complexity hotspots
-(`radon`), and architecture boundaries (`import-linter`) are wrapped and mapped
-into the same issue model. Each adapter is optional — if its tool isn't
-installed, or its rule is `off`, it's skipped and the reason is reported under
-`meta.adapters` (never a silent gap). Install them with
-`pip install "fallow-py[adapters]"`.
+(`radon`), architecture boundaries (`import-linter`), intra-module dead code
+(`vulture`), and unused imports (`ruff`) are wrapped and mapped into the same
+issue model. Adapters analyze exactly the file set the native engine discovered
+(gitignore, venv, and `ignore`-config aware — they never crawl `.venv` or
+site-packages). Each is optional — if its tool isn't installed, or its rule is
+`off`, it's skipped and the reason is reported under `meta.adapters` (never a
+silent gap). Install them with `pip install "fallow-py[adapters]"`.
 
 **Phase 3 — integration surface:** a GitHub Action (SARIF → Code Scanning), an
 MCP server (analysis exposed to AI agents over stdio), and an LSP server
@@ -41,9 +43,11 @@ fallow-py --only dependencies          # deptry adapter only
 ```
 
 Analyses selectable via `--only` / `--skip`: `unused-modules`, `cycles`,
-`unresolved-imports` (native), and `dependencies`, `complexity`, `boundaries`
-(adapters). Note that selecting an adapter still respects its rule severity — an
-adapter whose kinds are all `off` is skipped regardless of `--only`.
+`unresolved-imports` (native), and `dependencies`, `complexity`, `boundaries`,
+`dead-code`, `unused-imports` (adapters). Note that selecting an adapter still
+respects its rule severity — an adapter whose kinds are all `off` is skipped
+regardless of `--only`. `complexity`, `boundaries`, and `dead-code` are `off` by
+default (the last is FP-prone in dynamic code); enable them in config.
 
 Exit code: `1` if any `error`-severity issue is found (CI gate), `0` otherwise.
 
@@ -112,6 +116,38 @@ fallow-py-lsp           # stdio LSP server
 
 Re-analyzes the workspace on open/save and publishes findings as diagnostics
 (`source: fallow-py`, `code:` the issue kind).
+
+## Removing "slop" with Claude Code
+
+fallow-py is built to surface AI-generated cruft and let an agent clean it up.
+Coverage:
+
+- **Structural slop** (default-on): orphaned modules, unused dependencies,
+  unresolved/renamed imports, circular imports.
+- **Intra-module slop** (opt-in): dead functions/classes/methods (`vulture`) and
+  unused imports (`ruff`) — the most common AI dead code, invisible to the
+  module-level engine.
+
+Enable the dead-code sweep in the target project's `pyproject.toml`:
+
+```toml
+[tool.fallow_py.rules]
+dead-code = "warn"   # vulture; off by default because it is FP-prone
+```
+
+Then point Claude Code at the MCP server (below) or run `fallow-py --format json`
+and have it act on the findings. **fallow-py detects; it does not delete** —
+removal is the agent's job, and in Python it must be verified, because dynamic
+dispatch (decorators, string refs, registries) can make any dead-code tool
+false-positive. A sound loop:
+
+1. `dead-code` findings ≥ a confidence threshold (carried in `detail.confidence`).
+2. Remove, then **run the test suite** — revert anything that breaks (the safety gate).
+3. Re-run fallow-py until clean.
+
+vulture is configured to ignore framework decorators (routes, signals, fixtures,
+CLI commands), but residual false positives on framework classes (e.g. Django
+models) are expected — always review before deleting.
 
 ## Why a module is considered "used"
 

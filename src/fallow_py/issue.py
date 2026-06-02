@@ -21,6 +21,11 @@ UNLISTED_DEPENDENCY = "unlisted-dependency"
 COMPLEXITY_HOTSPOT = "complexity-hotspot"
 BOUNDARY_VIOLATION = "boundary-violation"
 STALE_SUPPRESSION = "stale-suppression"
+# Intra-module slop (Phase 2b adapters): dead symbols inside a live module
+# (vulture) and unused imports (ruff). The native engine works at module
+# granularity, so these cover the most common AI-generated dead code.
+DEAD_CODE = "dead-code"
+UNUSED_IMPORT = "unused-import"
 
 ALL_KINDS = (
     UNUSED_MODULE,
@@ -30,6 +35,8 @@ ALL_KINDS = (
     UNLISTED_DEPENDENCY,
     COMPLEXITY_HOTSPOT,
     BOUNDARY_VIOLATION,
+    DEAD_CODE,
+    UNUSED_IMPORT,
     STALE_SUPPRESSION,
 )
 

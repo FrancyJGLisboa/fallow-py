@@ -28,13 +28,17 @@ def _blocks(entries: list) -> list[dict]:
     return out
 
 
-def run_adapter(root: Path, config: Config) -> AdapterOutcome:
+def run_adapter(root: Path, config: Config, files=None) -> AdapterOutcome:
     if not config.is_enabled(COMPLEXITY_HOTSPOT):
         return AdapterOutcome(NAME, "skipped", reason="complexity-hotspot is off")
     if not module_available("radon"):
         return AdapterOutcome(NAME, "skipped", reason="radon not installed")
 
-    proc = run(python_module_cmd("radon", "cc", ".", "--json", "-n", _MIN_RANK), cwd=root)
+    paths = [f.rel for f in (files or [])]
+    if not paths:
+        return AdapterOutcome(NAME, "skipped", reason="no source files")
+    # Pass the discovered files explicitly so radon does not crawl .venv etc.
+    proc = run(python_module_cmd("radon", "cc", "--json", "-n", _MIN_RANK, *paths), cwd=root)
     try:
         data = json.loads(proc.stdout or "{}")
     except json.JSONDecodeError as exc:

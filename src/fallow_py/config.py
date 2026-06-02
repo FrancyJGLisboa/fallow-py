@@ -21,12 +21,14 @@ from .issue import (
     BOUNDARY_VIOLATION,
     CIRCULAR_DEPENDENCY,
     COMPLEXITY_HOTSPOT,
+    DEAD_CODE,
     SEVERITY_ERROR,
     SEVERITY_OFF,
     SEVERITY_WARN,
     UNLISTED_DEPENDENCY,
     UNRESOLVED_IMPORT,
     UNUSED_DEPENDENCY,
+    UNUSED_IMPORT,
     UNUSED_MODULE,
 )
 
@@ -40,6 +42,11 @@ DEFAULT_RULES: dict[str, str] = {
     UNLISTED_DEPENDENCY: SEVERITY_WARN,
     COMPLEXITY_HOTSPOT: SEVERITY_OFF,
     BOUNDARY_VIOLATION: SEVERITY_OFF,
+    # vulture is FP-prone on framework-dispatched code (Django models, routes,
+    # signals) -> OFF by default; opt in for a deliberate slop sweep.
+    DEAD_CODE: SEVERITY_OFF,
+    # Unused imports are high-signal / low-FP (ruff F401) -> on as a warning.
+    UNUSED_IMPORT: SEVERITY_WARN,
 }
 
 _VALID_SEVERITIES = {SEVERITY_ERROR, SEVERITY_WARN, SEVERITY_OFF}

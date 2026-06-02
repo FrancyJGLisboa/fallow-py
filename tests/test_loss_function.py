@@ -18,7 +18,9 @@ from fallow_py.issue import (
     BOUNDARY_VIOLATION,
     CIRCULAR_DEPENDENCY,
     COMPLEXITY_HOTSPOT,
+    DEAD_CODE,
     UNUSED_DEPENDENCY,
+    UNUSED_IMPORT,
     UNUSED_MODULE,
 )
 from fallow_py.report import json as json_report
@@ -191,6 +193,34 @@ def test_radon_adapter_unified():
     spot = next(i for i in hotspots if i.symbol == "tangled")
     assert spot.detail["tool"] == "radon"
     assert spot.detail["complexity"] >= 11  # rank C or worse
+
+
+@pytest.mark.skipif(not module_available("vulture"), reason="vulture not installed")
+def test_vulture_adapter_finds_intramodule_dead_code():
+    """The slop gap-closer: a dead function inside a *reachable* module must be
+    flagged (the native engine works at module granularity and cannot see this)."""
+    root = FIX / "slop_fixture"
+    result = analyze_project(root, load_config(root), only=frozenset({"dead-code"}))
+    dead = [i for i in result.issues if i.kind == DEAD_CODE]
+    assert any(i.symbol == "dead_function" for i in dead), (
+        f"expected dead_function; got {[i.symbol for i in dead]}"
+    )
+    spot = next(i for i in dead if i.symbol == "dead_function")
+    assert spot.detail["tool"] == "vulture"
+    assert "confidence" in spot.detail
+    # vulture must NOT report unused imports — that is the ruff adapter's job.
+    assert not any("import" in i.message for i in dead)
+
+
+@pytest.mark.skipif(not module_available("ruff"), reason="ruff not installed")
+def test_ruff_adapter_finds_unused_imports():
+    root = FIX / "slop_fixture"
+    result = analyze_project(root, load_config(root), only=frozenset({"unused-imports"}))
+    unused = [i for i in result.issues if i.kind == UNUSED_IMPORT]
+    assert any(i.symbol == "json" for i in unused), (
+        f"expected unused import 'json'; got {[i.symbol for i in unused]}"
+    )
+    assert unused[0].detail["tool"] == "ruff"
 
 
 @pytest.mark.skipif(not module_available("importlinter"), reason="import-linter not installed")
